@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d0d0d">
+<title>StudyWatch</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+:root{--bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c27;--border:rgba(255,255,255,0.07);--text:#f0f0f8;--muted:rgba(240,240,248,0.4);--accent:#7c6fff;--accent2:#ff6f9c;--green:#4fffb0;--amber:#ffb84f;--red:#ff5c7a;--mono:'DM Mono',monospace;--sans:'Syne',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:0.6}
+.app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:0 0 40px}
+#setup{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:32px}
+.logo{text-align:center}
+.logo-mark{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px}
+.logo h1{font-size:32px;font-weight:800;letter-spacing:-1px}
+.logo p{font-size:14px;color:var(--muted);margin-top:6px;font-family:var(--mono);font-weight:300}
+.setup-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px;width:100%;max-width:380px}
+.setup-card h2{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:20px}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.role-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:16px;padding:20px 16px;cursor:pointer;text-align:center;transition:all .2s;color:var(--text)}
+.role-btn:hover{border-color:var(--accent);background:rgba(124,111,255,.08)}
+.role-btn.active{border-color:var(--accent);background:rgba(124,111,255,.15)}
+.role-icon{font-size:28px;margin-bottom:8px;display:block}
+.role-label{font-size:13px;font-weight:600}
+.role-sub{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono)}
+.input-group{margin-bottom:16px}
+.input-group label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px;letter-spacing:.05em;font-family:var(--mono)}
+.input-group input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 16px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;transition:border-color .2s}
+.input-group input:focus{border-color:var(--accent)}
+.btn-primary{width:100%;background:linear-gradient(135deg,var(--accent),#9b8fff);border:none;border-radius:14px;padding:14px;color:white;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;letter-spacing:.02em}
+.btn-primary:hover{opacity:.9}
+.btn-primary:active{transform:scale(.98)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+#header{padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between}
+.header-title{font-size:14px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.header-right{display:flex;align-items:center;gap:10px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber);animation:pulse-dot 1s infinite}
+.sync-dot.live{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse-dot 2s infinite}
+.sync-dot.offline{background:var(--red);box-shadow:0 0 8px var(--red);animation:none}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
+.sync-label{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.logout-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted);font-size:11px;cursor:pointer;font-family:var(--mono)}
+.logout-btn:hover{color:var(--text);border-color:rgba(255,255,255,.15)}
+#status-hero{margin:24px 20px 0;background:var(--surface);border-radius:28px;border:1px solid var(--border);padding:32px 28px;text-align:center;position:relative;overflow:hidden;transition:all .4s}
+#status-hero::before{content:'';position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(124,111,255,.15) 0%,transparent 70%);pointer-events:none;transition:background .4s}
+#status-hero.studying::before{background:radial-gradient(circle,rgba(79,255,176,.15) 0%,transparent 70%)}
+#status-hero.break::before{background:radial-gradient(circle,rgba(255,184,79,.15) 0%,transparent 70%)}
+.status-emoji{font-size:52px;margin-bottom:12px;line-height:1}
+.status-name{font-size:22px;font-weight:800;margin-bottom:4px;letter-spacing:-.5px}
+.status-label{font-size:13px;font-family:var(--mono);font-weight:500;padding:4px 14px;border-radius:20px;display:inline-block;margin-bottom:8px;letter-spacing:.04em}
+.status-label.studying{background:rgba(79,255,176,.15);color:var(--green)}
+.status-label.break{background:rgba(255,184,79,.15);color:var(--amber)}
+.status-label.idle{background:rgba(255,255,255,.06);color:var(--muted)}
+.status-subject{font-size:15px;color:var(--muted);margin-top:8px;font-family:var(--mono);font-weight:300}
+.last-seen{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:8px;opacity:.6}
+#stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 20px 0}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px 12px;text-align:center}
+.stat-val{font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:-.5px}
+.stat-val.green{color:var(--green)}.stat-val.amber{color:var(--amber)}.stat-val.accent{color:var(--accent)}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.08em;text-transform:uppercase}
+#goal-block{margin:14px 20px 0;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px 20px}
+.goal-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.goal-title{font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono)}
+.goal-val{font-size:13px;color:var(--accent);font-family:var(--mono);font-weight:500}
+.progress-track{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:3px;transition:width 1s ease;max-width:100%}
+#timer-block{margin:14px 20px 0;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between}
+.timer-label{font-size:12px;color:var(--muted);font-family:var(--mono);letter-spacing:.04em;margin-bottom:4px}
+#live-timer{font-size:36px;font-weight:800;font-family:var(--mono);color:var(--green);letter-spacing:-1px;transition:color .3s}
+#live-timer.paused{color:var(--amber)}
+#live-timer.stopped{color:var(--muted)}
+.timer-ring{width:56px;height:56px;border-radius:50%;border:3px solid var(--surface2);position:relative;display:flex;align-items:center;justify-content:center}
+.timer-ring svg{position:absolute;inset:-3px;width:calc(100% + 6px);height:calc(100% + 6px);transform:rotate(-90deg)}
+.ring-progress{fill:none;stroke:var(--green);stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset 1s linear,stroke .3s}
+.ring-progress.paused{stroke:var(--amber)}
+.ring-text{font-size:11px;font-family:var(--mono);color:var(--muted);font-weight:500}
+#controls{margin:14px 20px 0}
+#controls h3{font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono);margin-bottom:12px}
+.subject-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 16px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;margin-bottom:12px;transition:border-color .2s}
+.subject-input:focus{border-color:var(--accent)}
+.subject-input::placeholder{color:var(--muted)}
+.control-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ctrl-btn{border:none;border-radius:14px;padding:14px;font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.ctrl-btn:active{transform:scale(.96)}
+.ctrl-btn.start{background:rgba(79,255,176,.15);color:var(--green);border:1px solid rgba(79,255,176,.3)}
+.ctrl-btn.start:hover{background:rgba(79,255,176,.22)}
+.ctrl-btn.pause{background:rgba(255,184,79,.15);color:var(--amber);border:1px solid rgba(255,184,79,.3)}
+.ctrl-btn.pause:hover{background:rgba(255,184,79,.22)}
+.ctrl-btn.stop{background:rgba(255,92,122,.12);color:var(--red);border:1px solid rgba(255,92,122,.25)}
+.ctrl-btn.stop:hover{background:rgba(255,92,122,.2)}
+.ctrl-btn.mood{background:rgba(124,111,255,.12);color:var(--accent);border:1px solid rgba(124,111,255,.25)}
+.ctrl-btn.mood:hover{background:rgba(124,111,255,.2)}
+.ctrl-btn:disabled{opacity:.35;pointer-events:none}
+#mood-bar{margin:14px 20px 0;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px 20px}
+.mood-title{font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono);margin-bottom:12px}
+.mood-opts{display:flex;gap:8px;justify-content:space-between}
+.mood-opt{flex:1;background:var(--surface2);border:1.5px solid transparent;border-radius:12px;padding:10px 4px;text-align:center;cursor:pointer;transition:all .2s;font-size:20px}
+.mood-opt:hover{border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.05)}
+.mood-opt.active{border-color:var(--accent);background:rgba(124,111,255,.15)}
+.mood-lbl{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:4px}
+#viewer-badge{margin:14px 20px 0;background:rgba(124,111,255,.08);border:1px solid rgba(124,111,255,.2);border-radius:14px;padding:14px 20px;display:flex;align-items:center;gap:12px}
+.vb-icon{font-size:20px}
+.vb-text{font-size:12px;color:rgba(124,111,255,.8);font-family:var(--mono);line-height:1.5}
+.vb-text strong{color:var(--accent);font-weight:600}
+#log-block{margin:14px 20px 0}
+#log-block h3{font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono);margin-bottom:12px}
+.log-entry{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.log-dot.s{background:var(--green)}.log-dot.b{background:var(--amber)}.log-dot.e{background:var(--red)}
+.log-info{flex:1}
+.log-action{font-size:13px;font-weight:600}
+.log-time{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:12px 24px;font-size:14px;font-family:var(--mono);transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:100;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="setup">
+    <div class="logo">
+      <div class="logo-mark">📚</div>
+      <h1>StudyWatch</h1>
+      <p>real-time study tracker</p>
+    </div>
+    <div class="setup-card">
+      <h2>Who are you?</h2>
+      <div class="role-grid">
+        <div class="role-btn" id="role-her" onclick="selectRole('her')">
+          <span class="role-icon">👩‍💻</span>
+          <div class="role-label">Her</div>
+          <div class="role-sub">I'm studying</div>
+        </div>
+        <div class="role-btn" id="role-me" onclick="selectRole('me')">
+          <span class="role-icon">👀</span>
+          <div class="role-label">You</div>
+          <div class="role-sub">I'm watching</div>
+        </div>
+      </div>
+      <div class="input-group">
+        <label>ROOM CODE — both use the same one</label>
+        <input type="text" id="room-input" placeholder="e.g.  aryaan-shaz-2025" maxlength="40"/>
+      </div>
+      <div class="input-group" id="name-group">
+        <label>HER NAME</label>
+        <input type="text" id="name-input" placeholder="e.g.  Shazia"/>
+      </div>
+      <div class="input-group">
+        <label>DAILY GOAL (hours)</label>
+        <input type="number" id="goal-input" placeholder="4" min="0.5" max="16" step="0.5" value="4"/>
+      </div>
+      <button class="btn-primary" id="enter-btn" onclick="enterApp()">Enter Room →</button>
+    </div>
+  </div>
+
+  <div id="main" class="hidden">
+    <div id="header">
+      <span class="header-title">📚 StudyWatch</span>
+      <div class="header-right">
+        <div class="sync-dot" id="sync-dot"></div>
+        <span class="sync-label" id="sync-label">connecting…</span>
+        <button class="logout-btn" onclick="doLogout()">leave</button>
+      </div>
+    </div>
+
+    <div id="status-hero">
+      <div class="status-emoji" id="hero-emoji">😴</div>
+      <div class="status-name" id="hero-name">—</div>
+      <div class="status-label idle" id="hero-status">not started</div>
+      <div class="status-subject" id="hero-subject"></div>
+      <div class="last-seen" id="last-seen"></div>
+    </div>
+
+    <div id="stats-row">
+      <div class="stat-card"><div class="stat-val green" id="stat-today">0h 0m</div><div class="stat-lbl">today</div></div>
+      <div class="stat-card"><div class="stat-val amber" id="stat-sessions">0</div><div class="stat-lbl">sessions</div></div>
+      <div class="stat-card"><div class="stat-val accent" id="stat-streak">0🔥</div><div class="stat-lbl">streak</div></div>
+    </div>
+
+    <div id="goal-block">
+      <div class="goal-row">
+        <span class="goal-title">daily goal</span>
+        <span class="goal-val" id="goal-pct">0%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="goal-bar" style="width:0%"></div></div>
+    </div>
+
+    <div id="timer-block">
+      <div>
+        <div class="timer-label">current session</div>
+        <div id="live-timer" class="stopped">00:00:00</div>
+      </div>
+      <div class="timer-ring">
+        <svg viewBox="0 0 62 62">
+          <circle cx="31" cy="31" r="28" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="3"/>
+          <circle class="ring-progress" id="ring-progress" cx="31" cy="31" r="28" stroke-dasharray="175.9" stroke-dashoffset="175.9"/>
+        </svg>
+        <span class="ring-text" id="ring-label">—</span>
+      </div>
+    </div>
+
+    <div id="mood-bar">
+      <div class="mood-title">focus mood</div>
+      <div class="mood-opts">
+        <div class="mood-opt" onclick="setMood('💀','dead')" id="mood-dead"><div>💀</div><div class="mood-lbl">dead</div></div>
+        <div class="mood-opt" onclick="setMood('😩','tired')" id="mood-tired"><div>😩</div><div class="mood-lbl">tired</div></div>
+        <div class="mood-opt" onclick="setMood('😐','meh')" id="mood-meh"><div>😐</div><div class="mood-lbl">meh</div></div>
+        <div class="mood-opt" onclick="setMood('🧠','focused')" id="mood-focused"><div>🧠</div><div class="mood-lbl">focused</div></div>
+        <div class="mood-opt" onclick="setMood('⚡','zone')" id="mood-zone"><div>⚡</div><div class="mood-lbl">in zone</div></div>
+      </div>
+    </div>
+
+    <div id="controls" class="hidden">
+      <h3>session controls</h3>
+      <input type="text" class="subject-input" id="subject-input" placeholder="what are you studying? (e.g. Organic Chemistry)"/>
+      <div class="control-btns">
+        <button class="ctrl-btn start" id="btn-start" onclick="startSession()">▶ Start</button>
+        <button class="ctrl-btn pause" id="btn-pause" onclick="pauseSession()" disabled>⏸ Pause</button>
+        <button class="ctrl-btn stop" id="btn-stop" onclick="stopSession()" disabled>⏹ Stop</button>
+        <button class="ctrl-btn mood" onclick="document.getElementById('mood-bar').scrollIntoView({behavior:'smooth'})">🧠 Mood</button>
+      </div>
+    </div>
+
+    <div id="viewer-badge" class="hidden">
+      <span class="vb-icon">👀</span>
+      <div class="vb-text">Viewer mode. Updates arrive live the moment she hits a button on her phone. Same room code, she picks "Her".</div>
+    </div>
+
+    <div id="log-block">
+      <h3>today's log</h3>
+      <div id="log-list"></div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ── STATE ── */
+var role=null,roomCode='',userName='',dailyGoalHours=4;
+var sessionStart=null,sessionPaused=false,pauseStart=null,totalPausedMs=0;
+var timerInterval=null,todayStudiedMs=0,sessionCount=0;
+var currentMood=null,currentSubject='',logEntries=[],currentStatus='idle';
+var lastRemoteUpdate=0,pollTimer=null;
+
+/* ── ROLE SELECT ── */
+function selectRole(r){
+  role=r;
+  document.getElementById('role-her').classList.toggle('active',r==='her');
+  document.getElementById('role-me').classList.toggle('active',r==='me');
+  document.getElementById('name-group').classList.toggle('hidden',r==='me');
+}
+
+/* ── ENTER APP ── */
+function enterApp(){
+  var room=document.getElementById('room-input').value.trim().replace(/\s+/g,'-').toLowerCase();
+  var name=document.getElementById('name-input').value.trim()||'Her';
+  var goal=parseFloat(document.getElementById('goal-input').value)||4;
+  if(!role){showToast('👆 Pick a role first');return;}
+  if(room.length<3){showToast('🔑 Room code too short');return;}
+  roomCode=room; userName=role==='her'?name:''; dailyGoalHours=goal;
+  var btn=document.getElementById('enter-btn');
+  btn.textContent='Opening…'; btn.disabled=true;
+  loadLocalState();
+  showMainApp();
+  startSync();
+  btn.textContent='Enter Room →'; btn.disabled=false;
+}
+
+/* ── SHOW MAIN APP ── */
+function showMainApp(){
+  document.getElementById('setup').style.display='none';
+  document.getElementById('main').classList.remove('hidden');
+  if(role==='her'){
+    document.getElementById('controls').classList.remove('hidden');
+    document.getElementById('viewer-badge').classList.add('hidden');
+    document.getElementById('hero-name').textContent=userName;
+    document.querySelectorAll('.mood-opt').forEach(function(el){el.style.pointerEvents='';});
+  } else {
+    document.getElementById('controls').classList.add('hidden');
+    document.getElementById('viewer-badge').classList.remove('hidden');
+    document.getElementById('hero-name').textContent='Waiting…';
+    document.querySelectorAll('.mood-opt').forEach(function(el){el.style.pointerEvents='none';});
+  }
+  renderLog(); updateStats(); updateHeroDisplay();
+}
+
+/* ─────────────────────────────────────────────
+   SYNC ENGINE
+   Uses JSONBin.io — a free public REST "bin"
+   that acts as a tiny cloud database.
+   No account needed for reads. Writes use a
+   free API key that's baked in below.
+   Room data lives at: /bins/<roomCode-hash>
+───────────────────────────────────────────── */
+
+// JSONBin free tier — replace with your own if you want more control
+// Get a free key at jsonbin.io (takes 30 seconds)
+var JSONBIN_KEY='$2a$10$nqLPY5M0.ck7juVg1pSwMe/BR5zKkojBIYywYeKACjtPdu0zxeAeu';
+var binIds={}; // roomCode -> binId cache
+
+function binUrl(id){ return 'https://api.jsonbin.io/v3/b/'+id; }
+function masterUrl(){ return 'https://api.jsonbin.io/v3/b?X-Master-Key='+encodeURIComponent(JSONBIN_KEY)+'&X-Bin-Name=sw-'+roomCode; }
+
+function startSync(){
+  setSyncIndicator('connecting');
+  console.log('startSync called with role:',role,'roomCode:',roomCode);
+  if(role==='her'){
+    findOrCreateBin(function(err,id){
+      console.log('Her bin callback - err:',err,'id:',id);
+      if(err){ setSyncIndicator('offline'); showToast('⚠ Sync unavailable — local only'); return; }
+      binIds[roomCode]=id;
+      var shareUrl=location.origin+location.pathname+'?room='+encodeURIComponent(roomCode)+'&binId='+encodeURIComponent(id)+'&role=me';
+      console.log('📱 Shareable link for viewer (copy this):',shareUrl);
+      setSyncIndicator('live');
+      showToast('✅ Room ready! Start studying.');
+    });
+  } else {
+    findOrCreateBin(function(err,id){
+      console.log('Viewer bin callback - err:',err,'id:',id);
+      if(err){ setSyncIndicator('offline'); showToast('⚠ Could not reach server'); return; }
+      binIds[roomCode]=id;
+      console.log('Viewer polling started for room:',roomCode,'bin:',id);
+      setSyncIndicator('live');
+      pollRemote();
+      pollTimer=setInterval(pollRemote,3000);
+      showToast('👀 Watching the room live…');
+    });
+  }
+}
+
+function findOrCreateBin(cb){
+  console.log('findOrCreateBin called for room:',roomCode);
+  
+  // Check if we already have a bin ID stored locally (for same tab)
+  var storedBinId=null;
+  try{storedBinId=localStorage.getItem('sw_binId_'+roomCode);}catch(e){}
+  if(storedBinId){
+    console.log('Using stored bin ID:',storedBinId);
+    cb(null,storedBinId);
+    return;
+  }
+  
+  // Try to look up existing bin by name via search
+  fetch('https://api.jsonbin.io/v3/b?X-Master-Key='+encodeURIComponent(JSONBIN_KEY),{
+    headers:{'X-Master-Key':JSONBIN_KEY}
+  })
+  .then(function(r){
+    console.log('Search fetch response status:',r.status);
+    return r.json();
+  })
+  .then(function(data){
+    console.log('Search result data:',data);
+    var bins=Array.isArray(data)?data:(data.result||[]);
+    console.log('Bins found:',bins.length);
+    var found=null;
+    for(var i=0;i<bins.length;i++){
+      if(bins[i].snippetMeta && bins[i].snippetMeta.name==='sw-'+roomCode){found=bins[i];break;}
+    }
+    if(found){
+      console.log('Existing bin found:',found);
+      var id=found.record||found._id||found.id;
+      try{localStorage.setItem('sw_binId_'+roomCode,id);}catch(e){}
+      cb(null,id);
+      return;
+    }
+    console.log('No bin found, creating new one for:','sw-'+roomCode);
+    return fetch('https://api.jsonbin.io/v3/b',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY,'X-Bin-Name':'sw-'+roomCode,'X-Bin-Private':'false'},
+      body:JSON.stringify({status:'idle',updatedAt:Date.now()})
+    });
+  })
+  .then(function(r){
+    if(!r)return null;
+    console.log('Create response status:',r.status);
+    return r&&r.json?r.json():r;
+  })
+  .then(function(data){
+    console.log('Create result data:',data);
+    if(!data){cb(new Error('Invalid bin create response'));return;}
+    var id=(data.metadata&& (data.metadata.id||data.metadata.record))||data.record||data.id||data._id;
+    if(id){
+      console.log('Resolved bin ID:',id);
+      try{localStorage.setItem('sw_binId_'+roomCode,id);}catch(e){}
+      cb(null,id);
+      return;
+    }
+    cb(new Error('Could not resolve new bin ID'));
+  })
+  .catch(function(e){
+    console.error('Bin init error:',e);
+    cb(e);
+  });
+}
+
+function pushState(){
+  var state=buildState();
+  saveLocalState(state);
+  var id=binIds[roomCode];
+  if(!id){return;}
+  fetch(binUrl(id),{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','X-Master-Key':JSONBIN_KEY,'X-Bin-Private':'false'},
+    body:JSON.stringify(state)
+  }).then(function(r){
+    setSyncIndicator(r.ok?'live':'offline');
+  }).catch(function(){setSyncIndicator('offline');});
+}
+
+function pollRemote(){
+  var id=binIds[roomCode];
+  if(!id){
+    console.log('pollRemote: no bin ID, retrying findOrCreateBin');
+    findOrCreateBin(function(err,newId){
+      if(!err&&newId){binIds[roomCode]=newId;pollRemote();}
+    });
+    return;
+  }
+  fetch(binUrl(id)+'/latest',{headers:{'X-Master-Key':JSONBIN_KEY}})
+  .then(function(r){
+    console.log('Poll fetch status:',r.status);
+    setSyncIndicator(r.ok?'live':'offline');
+    return r.json();
+  })
+  .then(function(data){
+    console.log('Poll data:',data);
+    var s=data.record||data;
+    if(s&&s.updatedAt>lastRemoteUpdate){
+      console.log('Applying remote state, status:',s.status);
+      applyRemoteState(s);
+    } else if(s) {
+      console.log('No update needed, lastRemoteUpdate:',lastRemoteUpdate,'s.updatedAt:',s.updatedAt);
+    }
+  })
+  .catch(function(e){
+    console.error('Poll error:',e);
+    setSyncIndicator('offline');
+  });
+}
+
+/* ── APPLY REMOTE STATE (viewer) ── */
+function applyRemoteState(s){
+  if(!s||!s.status)return;
+  lastRemoteUpdate=s.updatedAt||Date.now();
+  var prevStatus=currentStatus;
+  currentStatus=s.status||'idle';
+  currentSubject=s.subject||'';
+  currentMood=s.mood||null;
+  todayStudiedMs=s.todayStudiedMs||0;
+  sessionCount=s.sessionCount||0;
+  dailyGoalHours=s.dailyGoalHours||dailyGoalHours;
+  if(s.userName){userName=s.userName;document.getElementById('hero-name').textContent=userName;}
+
+  if(s.sessionStart){
+    sessionStart=new Date(s.sessionStart);
+    totalPausedMs=s.totalPausedMs||0;
+    sessionPaused=s.sessionPaused||false;
+    pauseStart=s.pauseStart?new Date(s.pauseStart):null;
+    if(!timerInterval&&currentStatus==='studying')startTimerDisplay();
+    if(currentStatus!=='studying'&&timerInterval)stopTimerDisplay();
+  } else {
+    sessionStart=null;sessionPaused=false;pauseStart=null;totalPausedMs=0;
+    if(timerInterval)stopTimerDisplay();
+  }
+
+  if(s.log&&JSON.stringify(s.log)!==JSON.stringify(logEntries)){
+    logEntries=s.log;renderLog();
+  }
+  if(currentMood){
+    document.querySelectorAll('.mood-opt').forEach(function(el){el.classList.remove('active');});
+    var mEl=document.getElementById('mood-'+currentMood.key);
+    if(mEl)mEl.classList.add('active');
+  }
+  updateHeroDisplay();updateStats();
+  var ago=Math.floor((Date.now()-(s.updatedAt||Date.now()))/1000);
+  document.getElementById('last-seen').textContent=ago<5?'updated just now':('updated '+ago+'s ago');
+
+  if(prevStatus!=='studying'&&currentStatus==='studying')showToast('📖 She started studying!');
+  else if(prevStatus==='studying'&&currentStatus==='break')showToast('☕ She took a break');
+  else if(prevStatus==='studying'&&currentStatus==='idle')showToast('✅ Session ended');
+}
+
+/* ── LOCAL STATE ── */
+function buildState(){
+  return{status:currentStatus,subject:currentSubject,mood:currentMood,
+    sessionStart:sessionStart?sessionStart.getTime():null,
+    sessionPaused:sessionPaused,pauseStart:pauseStart?pauseStart.getTime():null,
+    totalPausedMs:totalPausedMs,todayStudiedMs:todayStudiedMs,sessionCount:sessionCount,
+    userName:userName,dailyGoalHours:dailyGoalHours,updatedAt:Date.now(),
+    log:logEntries.slice(0,30),today:new Date().toISOString().slice(0,10)};
+}
+function saveLocalState(s){try{localStorage.setItem('sw_'+roomCode,JSON.stringify(s));}catch(e){}}
+function loadLocalState(){
+  try{
+    var raw=localStorage.getItem('sw_'+roomCode);
+    if(!raw)return;
+    var s=JSON.parse(raw);
+    var today=new Date().toISOString().slice(0,10);
+    if(s.today===today){todayStudiedMs=s.todayStudiedMs||0;sessionCount=s.sessionCount||0;logEntries=s.log||[];}
+  }catch(e){}
+}
+
+/* ── SESSION CONTROLS ── */
+function startSession(){
+  if(sessionStart&&!sessionPaused)return;
+  if(!sessionStart){
+    sessionStart=new Date();totalPausedMs=0;sessionCount++;
+    currentSubject=document.getElementById('subject-input').value.trim()||'General study';
+    addLog('s','Started: '+currentSubject);
+  } else if(sessionPaused){
+    if(pauseStart)totalPausedMs+=Date.now()-pauseStart.getTime();
+    pauseStart=null;sessionPaused=false;
+    addLog('s','Resumed studying');
+  }
+  setStatus('studying');startTimerDisplay();
+  document.getElementById('btn-start').disabled=true;
+  document.getElementById('btn-pause').disabled=false;
+  document.getElementById('btn-stop').disabled=false;
+  pushState();showToast('📖 Session started!');
+}
+function pauseSession(){
+  if(!sessionStart||sessionPaused)return;
+  sessionPaused=true;pauseStart=new Date();
+  setStatus('break');stopTimerDisplay();
+  document.getElementById('btn-start').disabled=false;
+  document.getElementById('btn-pause').disabled=true;
+  document.getElementById('btn-stop').disabled=false;
+  addLog('b','Took a break');pushState();showToast('⏸ Taking a break');
+}
+function stopSession(){
+  if(!sessionStart)return;
+  if(sessionPaused&&pauseStart)totalPausedMs+=Date.now()-pauseStart.getTime();
+  var elapsed=Math.max(0,Date.now()-sessionStart.getTime()-totalPausedMs);
+  todayStudiedMs+=elapsed;
+  stopTimerDisplay();addLog('e','Finished: '+fmtMs(elapsed));
+  sessionStart=null;sessionPaused=false;pauseStart=null;totalPausedMs=0;
+  setStatus('idle');
+  document.getElementById('btn-start').disabled=false;
+  document.getElementById('btn-pause').disabled=true;
+  document.getElementById('btn-stop').disabled=true;
+  document.getElementById('subject-input').value='';
+  updateStats();pushState();checkStreak();
+  showToast('✅ '+fmtMs(elapsed)+' saved!');
+}
+
+/* ── MOOD ── */
+function setMood(emoji,key){
+  if(role==='me')return;
+  currentMood={emoji:emoji,key:key};
+  document.querySelectorAll('.mood-opt').forEach(function(el){el.classList.remove('active');});
+  var mEl=document.getElementById('mood-'+key);if(mEl)mEl.classList.add('active');
+  updateHeroDisplay();pushState();showToast('Mood: '+emoji+' '+key);
+}
+
+/* ── TIMER ── */
+function startTimerDisplay(){if(timerInterval)clearInterval(timerInterval);timerInterval=setInterval(updateTimerDisplay,1000);updateTimerDisplay();}
+function stopTimerDisplay(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}updateTimerDisplay();}
+function updateTimerDisplay(){
+  var el=document.getElementById('live-timer'),ring=document.getElementById('ring-progress'),lbl=document.getElementById('ring-label');
+  if(!sessionStart){el.textContent='00:00:00';el.className='stopped';ring.style.strokeDashoffset='175.9';ring.className='ring-progress';lbl.textContent='—';return;}
+  var paused=totalPausedMs;
+  if(sessionPaused&&pauseStart)paused+=Date.now()-pauseStart.getTime();
+  var elapsed=Math.max(0,Date.now()-sessionStart.getTime()-paused);
+  el.textContent=fmtMs(elapsed);el.className=sessionPaused?'paused':'';
+  var pct=Math.min(1,elapsed/(dailyGoalHours*3600000));
+  ring.style.strokeDashoffset=175.9*(1-pct);ring.className='ring-progress'+(sessionPaused?' paused':'');
+  var mins=Math.floor(elapsed/60000);lbl.textContent=mins<60?mins+'m':Math.floor(mins/60)+'h';
+}
+
+/* ── STATUS / HERO ── */
+function setStatus(s){currentStatus=s;updateHeroDisplay();}
+function updateHeroDisplay(){
+  var hero=document.getElementById('status-hero');
+  var emoji=document.getElementById('hero-emoji');
+  var lbl=document.getElementById('hero-status');
+  var subj=document.getElementById('hero-subject');
+  hero.className='';lbl.className='status-label';
+  if(currentStatus==='studying'){
+    hero.classList.add('studying');emoji.textContent=currentMood?currentMood.emoji:'📖';
+    lbl.textContent='● studying';lbl.classList.add('studying');subj.textContent=currentSubject||'';
+  } else if(currentStatus==='break'){
+    hero.classList.add('break');emoji.textContent='☕';
+    lbl.textContent='⏸ on a break';lbl.classList.add('break');
+    subj.textContent=currentSubject?'was studying: '+currentSubject:'';
+  } else {
+    emoji.textContent='😴';lbl.textContent='not studying';lbl.classList.add('idle');subj.textContent='';
+  }
+}
+
+/* ── STATS ── */
+function updateStats(){
+  var h=Math.floor(todayStudiedMs/3600000),m=Math.floor((todayStudiedMs%3600000)/60000);
+  document.getElementById('stat-today').textContent=h+'h '+m+'m';
+  document.getElementById('stat-sessions').textContent=sessionCount;
+  var streak=parseInt(localStorage.getItem('sw_streak_'+roomCode)||'0');
+  document.getElementById('stat-streak').textContent=streak+'🔥';
+  var pct=Math.min(100,Math.round((todayStudiedMs/(dailyGoalHours*3600000))*100));
+  document.getElementById('goal-pct').textContent=pct+'%';
+  document.getElementById('goal-bar').style.width=pct+'%';
+}
+function checkStreak(){
+  var today=new Date().toISOString().slice(0,10);
+  var yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  var last=localStorage.getItem('sw_last_'+roomCode);
+  var streak=parseInt(localStorage.getItem('sw_streak_'+roomCode)||'0');
+  if(todayStudiedMs>=dailyGoalHours*3600000*0.5){
+    if(last===yesterday)streak++;else if(last!==today)streak=1;
+    localStorage.setItem('sw_last_'+roomCode,today);
+    localStorage.setItem('sw_streak_'+roomCode,streak);
+    updateStats();
+  }
+}
+
+/* ── LOG ── */
+function addLog(type,text){
+  logEntries.unshift({type:type,text:text,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  if(logEntries.length>30)logEntries.pop();
+  renderLog();
+}
+function renderLog(){
+  var el=document.getElementById('log-list');
+  if(!logEntries.length){el.innerHTML='<div style="font-size:13px;color:var(--muted);font-family:var(--mono);padding:12px 0">no activity yet today</div>';return;}
+  el.innerHTML=logEntries.slice(0,10).map(function(e){return'<div class="log-entry"><div class="log-dot '+e.type+'"></div><div class="log-info"><div class="log-action">'+e.text+'</div><div class="log-time">'+e.time+'</div></div></div>';}).join('');
+}
+
+/* ── SYNC INDICATOR ── */
+function setSyncIndicator(state){
+  var dot=document.getElementById('sync-dot'),lbl=document.getElementById('sync-label');
+  dot.className='sync-dot'+(state==='live'?' live':state==='offline'?' offline':'');
+  lbl.textContent=state==='live'?'live':state==='offline'?'offline':'connecting…';
+}
+
+/* ── HELPERS ── */
+function fmtMs(ms){var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sc).padStart(2,'0');}
+var toastT;
+function showToast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},3000);}
+
+function doLogout(){
+  if(timerInterval)clearInterval(timerInterval);
+  if(pollTimer)clearInterval(pollTimer);
+  document.getElementById('main').classList.add('hidden');
+  document.getElementById('setup').style.display='flex';
+  role=null;roomCode='';userName='';dailyGoalHours=4;
+  sessionStart=null;sessionPaused=false;pauseStart=null;totalPausedMs=0;
+  timerInterval=null;pollTimer=null;currentMood=null;currentSubject='';currentStatus='idle';
+  todayStudiedMs=0;sessionCount=0;logEntries=[];lastRemoteUpdate=0;binIds={};
+  document.getElementById('enter-btn').textContent='Enter Room →';
+  document.getElementById('enter-btn').disabled=false;
+  document.getElementById('room-input').value='';
+  document.getElementById('name-input').value='';
+  document.getElementById('subject-input').value='';
+  document.getElementById('hero-name').textContent='—';
+  document.getElementById('hero-emoji').textContent='😴';
+  document.getElementById('hero-status').textContent='not started';
+  document.getElementById('hero-status').className='status-label idle';
+  document.getElementById('hero-subject').textContent='';
+  document.getElementById('last-seen').textContent='';
+  document.getElementById('stat-today').textContent='0h 0m';
+  document.getElementById('stat-sessions').textContent='0';
+  document.getElementById('stat-streak').textContent='0🔥';
+  document.getElementById('goal-pct').textContent='0%';
+  document.getElementById('goal-bar').style.width='0%';
+  document.getElementById('sync-dot').className='sync-dot';
+  document.getElementById('sync-label').textContent='connecting…';
+  document.querySelectorAll('.role-btn').forEach(function(el){el.classList.remove('active');});
+  document.querySelectorAll('.mood-opt').forEach(function(el){el.classList.remove('active');el.style.pointerEvents='';});
+  document.getElementById('viewer-badge').classList.add('hidden');
+  document.getElementById('controls').classList.add('hidden');
+  renderLog();
+}
+
+window.addEventListener('load',function(){
+  var p=new URLSearchParams(location.search);
+  if(p.get('room'))document.getElementById('room-input').value=p.get('room');
+  if(p.get('role')==='me')selectRole('me');
+  if(p.get('role')==='her')selectRole('her');
+  // Store binId from URL if provided (for incognito mode sharing)
+  if(p.get('room')&&p.get('binId')){
+    try{localStorage.setItem('sw_binId_'+p.get('room'),p.get('binId'));}catch(e){}
+  }
+});
+</script>
+</body>
+</html>
