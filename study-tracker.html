@@ -107,6 +107,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .vb-icon{font-size:20px}
 .vb-text{font-size:12px;color:rgba(124,111,255,.8);font-family:var(--mono);line-height:1.5}
 .vb-text strong{color:var(--accent);font-weight:600}
+#share-block{margin:14px 20px 0;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px 20px}
+.share-title{font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono);margin-bottom:10px}
+.share-inner{display:flex;gap:10px;flex-wrap:wrap}
+#share-link{flex:1 1 100%;background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;min-width:0}
+#share-link:focus{border-color:var(--accent)}
+.share-note{font-size:12px;color:var(--muted);font-family:var(--mono);margin-top:10px;line-height:1.4}
 #log-block{margin:14px 20px 0}
 #log-block h3{font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono);margin-bottom:12px}
 .log-entry{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;animation:fadeIn .3s ease}
@@ -133,17 +139,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <p>real-time study tracker</p>
     </div>
     <div class="setup-card">
-      <h2>Who are you?</h2>
+      <h2>Enter the room</h2>
       <div class="role-grid">
-        <div class="role-btn" id="role-her" onclick="selectRole('her')">
+        <div class="role-btn active" id="role-her" onclick="selectRole('her')">
           <span class="role-icon">👩‍💻</span>
           <div class="role-label">Her</div>
-          <div class="role-sub">I'm studying</div>
-        </div>
-        <div class="role-btn" id="role-me" onclick="selectRole('me')">
-          <span class="role-icon">👀</span>
-          <div class="role-label">You</div>
-          <div class="role-sub">I'm watching</div>
+          <div class="role-sub">She's studying</div>
         </div>
       </div>
       <div class="input-group">
@@ -235,6 +236,15 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div class="vb-text">Viewer mode. Updates arrive live the moment she hits a button on her phone. Same room code, she picks "Her".</div>
     </div>
 
+    <div id="share-block" class="hidden">
+      <div class="share-title">Share this room</div>
+      <div class="share-inner">
+        <input type="text" id="share-link" readonly />
+        <button class="ctrl-btn mood" type="button" onclick="copyShareLink()">Copy link</button>
+      </div>
+      <div class="share-note">Send this link to someone who will watch the room live.</div>
+    </div>
+
     <div id="log-block">
       <h3>today's log</h3>
       <div id="log-list"></div>
@@ -249,13 +259,14 @@ var role=null,roomCode='',userName='',dailyGoalHours=4;
 var sessionStart=null,sessionPaused=false,pauseStart=null,totalPausedMs=0;
 var timerInterval=null,todayStudiedMs=0,sessionCount=0;
 var currentMood=null,currentSubject='',logEntries=[],currentStatus='idle';
-var lastRemoteUpdate=0,pollTimer=null;
+var shareUrl='',lastRemoteUpdate=0,pollTimer=null;
 
 /* ── ROLE SELECT ── */
 function selectRole(r){
   role=r;
   document.getElementById('role-her').classList.toggle('active',r==='her');
-  document.getElementById('role-me').classList.toggle('active',r==='me');
+  var viewerBtn=document.getElementById('role-me');
+  if(viewerBtn) viewerBtn.classList.toggle('active',r==='me');
   document.getElementById('name-group').classList.toggle('hidden',r==='me');
 }
 
@@ -318,10 +329,11 @@ function startSync(){
       console.log('Her bin callback - err:',err,'id:',id);
       if(err){ setSyncIndicator('offline'); showToast('⚠ Sync unavailable — local only'); return; }
       binIds[roomCode]=id;
-      var shareUrl=location.origin+location.pathname+'?room='+encodeURIComponent(roomCode)+'&binId='+encodeURIComponent(id)+'&role=me';
-      console.log('📱 Shareable link for viewer (copy this):',shareUrl);
+      shareUrl=location.origin+location.pathname+'?room='+encodeURIComponent(roomCode)+'&binId='+encodeURIComponent(id)+'&role=me';
+      console.log('📱 Shareable link for viewer:',shareUrl);
+      showShareLink(shareUrl);
       setSyncIndicator('live');
-      showToast('✅ Room ready! Start studying.');
+      showToast('✅ Room ready! Share the link and start studying.');
     });
   } else {
     findOrCreateBin(function(err,id){
@@ -641,6 +653,9 @@ function setSyncIndicator(state){
 
 /* ── HELPERS ── */
 function fmtMs(ms){var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sc).padStart(2,'0');}
+function showShareLink(url){shareUrl=url;var el=document.getElementById('share-link');if(el){el.value=url;document.getElementById('share-block').classList.remove('hidden');}}
+function copyShareLink(){var text=shareUrl||document.getElementById('share-link').value;if(!text){showToast('No share link available yet');return;}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){showToast('Link copied to clipboard!');}).catch(function(){fallbackCopy(text);});} else {fallbackCopy(text);}}
+function fallbackCopy(text){var input=document.createElement('textarea');input.value=text;input.style.position='fixed';input.style.left='-9999px';document.body.appendChild(input);input.focus();input.select();try{document.execCommand('copy');showToast('Link copied to clipboard!');}catch(e){showToast('Copy failed, please select manually');}document.body.removeChild(input);}
 var toastT;
 function showToast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},3000);}
 
@@ -650,6 +665,9 @@ function doLogout(){
   document.getElementById('main').classList.add('hidden');
   document.getElementById('setup').style.display='flex';
   role=null;roomCode='';userName='';dailyGoalHours=4;
+  shareUrl='';
+  document.getElementById('share-link').value='';
+  document.getElementById('share-block').classList.add('hidden');
   sessionStart=null;sessionPaused=false;pauseStart=null;totalPausedMs=0;
   timerInterval=null;pollTimer=null;currentMood=null;currentSubject='';currentStatus='idle';
   todayStudiedMs=0;sessionCount=0;logEntries=[];lastRemoteUpdate=0;binIds={};
@@ -682,7 +700,7 @@ window.addEventListener('load',function(){
   var p=new URLSearchParams(location.search);
   if(p.get('room'))document.getElementById('room-input').value=p.get('room');
   if(p.get('role')==='me')selectRole('me');
-  if(p.get('role')==='her')selectRole('her');
+  else selectRole('her');
   // Store binId from URL if provided (for incognito mode sharing)
   if(p.get('room')&&p.get('binId')){
     try{localStorage.setItem('sw_binId_'+p.get('room'),p.get('binId'));}catch(e){}
